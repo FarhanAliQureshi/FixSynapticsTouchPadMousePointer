@@ -12,4 +12,6 @@
 //#include <malloc.h>
 //#include <memory.h>
 //#include <tchar.h>
-#include <string.h>
+//#include <string.h>
+#include <shellapi.h>
+//#include <winuser.h>
