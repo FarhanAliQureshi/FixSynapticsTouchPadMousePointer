@@ -15,4 +15,5 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 BOOL AddTaskbarIcon(HWND);
 BOOL RemoveTaskbarIcon(HWND);
-void DisplayNotifyIconPopupMenu(HWND);
+BOOL DisplayNotifyIconPopupMenu(HWND);
+void ResourceCleanup(HINSTANCE, HWND);

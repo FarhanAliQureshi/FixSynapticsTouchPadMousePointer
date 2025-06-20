@@ -34,6 +34,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         DispatchMessage(&msg);
     }
 
+    // Cleanup
+    DestroyMenu(hNotifyIconBaseMenu);
+
     return (int)msg.wParam;
 }
 
@@ -100,7 +103,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             MessageBox(hWnd, L"TODO: About", L"TODO", 0);
             break;
         case IDM_NOTIFYICON_EXIT:
-            PostMessage(hWnd, WM_DESTROY, 0, 0);
+            DestroyWindow(hWnd);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -164,12 +167,12 @@ BOOL RemoveTaskbarIcon(HWND hWnd)
     return Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
-void DisplayNotifyIconPopupMenu(HWND hWnd)
+BOOL DisplayNotifyIconPopupMenu(HWND hWnd)
 {
     POINT ptCursorPosition;
 
     GetCursorPos(&ptCursorPosition);
-    TrackPopupMenu(
+    return TrackPopupMenu(
         m_hNotifyIconPopupMenu,
         0,
         ptCursorPosition.x,
