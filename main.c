@@ -9,6 +9,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // Initialize module level variables
+    HMENU hNotifyIconBaseMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_NOTIFYICON_MENU));
+    m_hNotifyIconPopupMenu = GetSubMenu(hNotifyIconBaseMenu, 0);
+
+    // Initialize local variables
     HWND hWndMainWindow = 0;
     ATOM hAtomMainClassId = 0;
 
@@ -20,7 +26,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (!AddTaskbarIcon(hWndMainWindow))
         return FALSE;
 
-    // Main message loop:
+    // Main message loop
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
@@ -43,7 +49,7 @@ ATOM RegisterClassMain(HINSTANCE hInstance)
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
-    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = NULL;
@@ -57,8 +63,19 @@ ATOM RegisterClassMain(HINSTANCE hInstance)
 
 HWND InitWindowMain(HINSTANCE hInstance, int nCmdShow)
 {
-    HWND hWnd = CreateWindow(MAIN_WINDOW_CLASS, MAIN_WINDOW_NAME, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+    HWND hWnd = CreateWindow(
+        MAIN_WINDOW_CLASS, 
+        MAIN_WINDOW_NAME, 
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 
+        0, 
+        CW_USEDEFAULT, 
+        0, 
+        NULL, 
+        NULL, 
+        hInstance, 
+        NULL
+    );
 
     if (!hWnd)
         return hWnd;
@@ -74,17 +91,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_COMMAND:
-    {
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    break;
+        switch (LOWORD(wParam))
+        {
+        case IDM_NOTIFYICON_SETTINGS:
+            MessageBox(hWnd, L"TODO: Settings", L"TODO", 0);
+            break;
+        case IDM_NOTIFYICON_ABOUT:
+            MessageBox(hWnd, L"TODO: About", L"TODO", 0);
+            break;
+        case IDM_NOTIFYICON_EXIT:
+            PostMessage(hWnd, WM_DESTROY, 0, 0);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+        break;
     case WM_PAINT:
-    {
+        ;  // If I don't put an empty statement here then compiler give weird error: E1072 a declaration cannot have a label
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         EndPaint(hWnd, &ps);
-    }
-    break;
+        break;
+    case APP_NOTIFYICON_CALLBACK_MSG:
+        switch (lParam)
+        {
+        case WM_RBUTTONDOWN:
+            DisplayNotifyIconPopupMenu(hWnd);
+            break;
+        case WM_LBUTTONDOWN:
+            MessageBox(hWnd, L"TODO: Fix the TouchPad issue", L"TODO", 0);
+            break;
+        }
+        break;
     case WM_DESTROY:
         RemoveTaskbarIcon(hWnd);
         PostQuitMessage(0);
@@ -104,9 +142,10 @@ BOOL AddTaskbarIcon(HWND hWnd)
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hWnd;
     nid.uID = APP_NOTIFYICON_ID;
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_SHOWTIP;         // Should I use NIF_GUID too?
+    nid.uFlags = NIF_ICON | NIF_TIP | NIF_SHOWTIP | NIF_MESSAGE;         // Should I use NIF_GUID too?
     nid.uCallbackMessage = APP_NOTIFYICON_CALLBACK_MSG;
     nid.hIcon = (HICON)GetClassLongPtr(hWnd, GCLP_HICON);
+    nid.dwState = NIS_SHAREDICON;
     wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), MAIN_WINDOW_NAME);
 
     return Shell_NotifyIcon(NIM_ADD, &nid);
@@ -123,4 +162,20 @@ BOOL RemoveTaskbarIcon(HWND hWnd)
     nid.uID = APP_NOTIFYICON_ID;
 
     return Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
+void DisplayNotifyIconPopupMenu(HWND hWnd)
+{
+    POINT ptCursorPosition;
+
+    GetCursorPos(&ptCursorPosition);
+    TrackPopupMenu(
+        m_hNotifyIconPopupMenu,
+        0,
+        ptCursorPosition.x,
+        ptCursorPosition.y,
+        0,
+        hWnd,
+        NULL
+    );
 }
