@@ -1,6 +1,10 @@
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 #include "framework.h"
 #include "resource.h"
 #include "main.h"
+#include "about.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -10,7 +14,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+    // Initialize extended common controls
+    if (!InitExtendedControls())
+    {
+        MessageBox(NULL, L"Unable to initialize Common Controls", NULL, MB_ICONERROR);
+        return FALSE;
+    }
+
     // Initialize module level variables
+    m_hInstance = hInstance;
+    hWndAbout = NULL;
     HMENU hNotifyIconBaseMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_NOTIFYICON_MENU));
     m_hNotifyIconPopupMenu = GetSubMenu(hNotifyIconBaseMenu, 0);
 
@@ -83,8 +96,9 @@ HWND InitWindowMain(HINSTANCE hInstance, int nCmdShow)
     if (!hWnd)
         return hWnd;
 
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
+    // Main window will be hidden as we don't need it other than message-loop
+    //ShowWindow(hWnd, nCmdShow);
+    //UpdateWindow(hWnd);
 
     return hWnd;
 }
@@ -100,7 +114,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             MessageBox(hWnd, L"TODO: Settings", L"TODO", 0);
             break;
         case IDM_NOTIFYICON_ABOUT:
-            MessageBox(hWnd, L"TODO: About", L"TODO", 0);
+            DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hWnd, AboutDialogBox);
             break;
         case IDM_NOTIFYICON_EXIT:
             DestroyWindow(hWnd);
@@ -145,13 +159,19 @@ BOOL AddTaskbarIcon(HWND hWnd)
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hWnd;
     nid.uID = APP_NOTIFYICON_ID;
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_SHOWTIP | NIF_MESSAGE;         // Should I use NIF_GUID too?
+    nid.uFlags = NIF_ICON | NIF_TIP | NIF_SHOWTIP | NIF_MESSAGE; // | NIF_GUID;
     nid.uCallbackMessage = APP_NOTIFYICON_CALLBACK_MSG;
     nid.hIcon = (HICON)GetClassLongPtr(hWnd, GCLP_HICON);
     nid.dwState = NIS_SHAREDICON;
-    wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), MAIN_WINDOW_NAME);
+    //nid.guidItem = APP_NOTIFYICON_GUID;
+    // Using StringCchCopy instead of wcscpy_s (which is part of C Runtime (CRT)).
+    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), MAIN_WINDOW_NAME);
 
     return Shell_NotifyIcon(NIM_ADD, &nid);
+
+    // NOTIFYICON_VERSION_4 is prefered
+    //nid.uVersion = NOTIFYICON_VERSION_4;
+    //return Shell_NotifyIcon(NIM_SETVERSION, &nid);
 }
 
 BOOL RemoveTaskbarIcon(HWND hWnd)
@@ -163,6 +183,7 @@ BOOL RemoveTaskbarIcon(HWND hWnd)
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hWnd;
     nid.uID = APP_NOTIFYICON_ID;
+    //nid.guidItem = APP_NOTIFYICON_GUID;
 
     return Shell_NotifyIcon(NIM_DELETE, &nid);
 }
@@ -181,4 +202,15 @@ BOOL DisplayNotifyIconPopupMenu(HWND hWnd)
         hWnd,
         NULL
     );
+}
+
+BOOL InitExtendedControls()
+{
+    INITCOMMONCONTROLSEX icce;
+
+    ZeroMemory(&icce, sizeof(INITCOMMONCONTROLSEX));
+    icce.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icce.dwICC = ICC_LINK_CLASS;
+    
+    return InitCommonControlsEx(&icce);
 }
