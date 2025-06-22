@@ -1,5 +1,5 @@
 #include "framework.h"
-#include "about.h"
+#include "about_dialog.h"
 
 // Message handler for about dialog-box window.
 INT_PTR CALLBACK AboutDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

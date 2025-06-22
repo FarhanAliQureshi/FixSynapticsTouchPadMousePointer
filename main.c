@@ -3,8 +3,10 @@
 
 #include "framework.h"
 #include "resource.h"
+#include "globals.h"
 #include "main.h"
-#include "about.h"
+#include "about_dialog.h"
+#include "settings_dialog.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -21,8 +23,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    // Initalize global variables
+    g_hInstance = hInstance;
+
     // Initialize module level variables
-    m_hInstance = hInstance;
     hWndAbout = NULL;
     HMENU hNotifyIconBaseMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_NOTIFYICON_MENU));
     m_hNotifyIconPopupMenu = GetSubMenu(hNotifyIconBaseMenu, 0);
@@ -111,10 +115,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case IDM_NOTIFYICON_SETTINGS:
-            MessageBox(hWnd, L"TODO: Settings", L"TODO", 0);
+            DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_SETTINGS_DIALOG), hWnd, SettingsDialogBox);
             break;
         case IDM_NOTIFYICON_ABOUT:
-            DialogBox(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hWnd, AboutDialogBox);
+            DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hWnd, AboutDialogBox);
             break;
         case IDM_NOTIFYICON_EXIT:
             DestroyWindow(hWnd);
@@ -210,7 +214,7 @@ BOOL InitExtendedControls()
 
     ZeroMemory(&icce, sizeof(INITCOMMONCONTROLSEX));
     icce.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icce.dwICC = ICC_LINK_CLASS;
+    icce.dwICC = ICC_LINK_CLASS | ICC_TAB_CLASSES | ICC_UPDOWN_CLASS;
     
     return InitCommonControlsEx(&icce);
 }

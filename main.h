@@ -9,7 +9,6 @@
 
 // Module level variables
 HMENU m_hNotifyIconPopupMenu;
-HINSTANCE m_hInstance;
 HWND hWndAbout;
 
 // Forward declarations of functions

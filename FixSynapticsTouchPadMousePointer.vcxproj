@@ -134,14 +134,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="about.h" />
+    <ClInclude Include="about_dialog.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="globals.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="settings_dialog.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="about.c" />
+    <ClCompile Include="about_dialog.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="settings_dialog.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FixSynapticsTouchPadMousePointer.rc" />
