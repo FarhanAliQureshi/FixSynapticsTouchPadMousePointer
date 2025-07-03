@@ -139,11 +139,13 @@
     <ClInclude Include="globals.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="settings.h" />
     <ClInclude Include="settings_dialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="about_dialog.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="settings.c" />
     <ClCompile Include="settings_dialog.c" />
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "globals.h"
 #include "main.h"
+#include "settings.h"
 #include "about_dialog.h"
 #include "settings_dialog.h"
 
@@ -25,6 +26,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initalize global variables
     g_hInstance = hInstance;
+
+    // Load settings
+    g_asAppSettings.SettingsLocation = SETTINGS_IN_REGISTRY;
+    LoadSettings(&g_asAppSettings);
 
     // Initialize module level variables
     hWndAbout = NULL;
