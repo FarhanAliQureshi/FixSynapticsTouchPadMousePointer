@@ -85,9 +85,10 @@ INT_PTR InitTabControl(HWND hParent)
     // Store HWND of Tab Control
     m_tabControlData.hTabControl = GetDlgItem(hParent, IDC_TAB1);
     // Make Tab Control as a parent of other child windows
-    LONG tabControlExStyles = GetWindowLong(m_tabControlData.hTabControl, GWL_EXSTYLE);
+    LONG_PTR tabControlExStyles = GetWindowLongPtr(m_tabControlData.hTabControl, GWL_EXSTYLE);
     tabControlExStyles |= WS_EX_CONTROLPARENT;
-    SetWindowLong(m_tabControlData.hTabControl, GWL_EXSTYLE, tabControlExStyles);
+    SetWindowLongPtr(m_tabControlData.hTabControl, GWL_EXSTYLE, tabControlExStyles);
+    SetWindowPos(m_tabControlData.hTabControl, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
     // Create tabs in tab control
     TCITEM tci;
