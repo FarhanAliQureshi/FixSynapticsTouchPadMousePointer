@@ -2,9 +2,6 @@
     TODO: Make the IDD_PROPPAGE_SETTINGS_GENERAL (inside IDC_TAB1) to have
     transparent background.
 
-    TODO: Resize IDD_PROPPAGE_SETTINGS_GENERAL to have (maximum) sized exactly to 
-    the client-area of IDC_TAB1. 
-
     TODO: Tab-key (Tab-stop) works with controls in child IDD_PROPPAGE_SETTINGS_GENERAL
     with parent dialog window IDD_SETTINGS_DIALOG.
 */
@@ -24,6 +21,10 @@ typedef struct TABCONTROLDATA
 
 TABCONTROLDATA m_tabControlData;
 
+// Forward declarations of functions (keeping them private to this module)
+void DisplayGeneralSettings(HWND);
+void StoreGeneralSettings(HWND);
+
 // Message handler for about dialog-box window.
 INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -39,6 +40,7 @@ INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARA
         switch LOWORD(wParam)
         {
         case IDOK:
+            StoreGeneralSettings(m_tabControlData.hPage[0]);
         case IDCANCEL:
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -115,6 +117,9 @@ INT_PTR InitTabControl(HWND hParent)
         );
     }
 
+    // Display settings on tab pages
+    DisplayGeneralSettings(m_tabControlData.hPage[0]);
+
     // Show first page
     TabCtrl_SetCurSel(m_tabControlData.hTabControl, 0);
     OnTabSelectionChange();
@@ -140,5 +145,44 @@ void DestroyTabControlDialogs()
     {
         DestroyWindow(m_tabControlData.hPage[i]);
         m_tabControlData.hPage[i] = NULL;
+    }
+}
+
+void DisplayGeneralSettings(HWND hPropertyPage)
+{
+    SetDlgItemText(hPropertyPage, IDC_EDIT_FOLDER, g_asAppSettings.PathToSynapticsApp);
+    SetDlgItemInt(hPropertyPage, IDC_EDIT_DELAY, g_asAppSettings.RelaunchDelay, FALSE);
+}
+
+void StoreGeneralSettings(HWND hPropertyPage)
+{
+    BOOL bSuccess;
+    APP_SETTINGS defaultSettings;
+    WCHAR buffer[MAX_SETTINGS_VALUE_SIZE];
+
+    LoadDefaultSettings(&defaultSettings);
+
+    // Path to Synaptics App
+    UINT nResult = GetDlgItemText(hPropertyPage, IDC_EDIT_FOLDER, buffer, ARRAYSIZE(buffer));
+    if (nResult)
+    {
+        size_t length;
+        if (StringCchLength(buffer, ARRAYSIZE(buffer), &length) == S_OK)
+        {
+            // Don't let user to make an invalid setting
+            if (length == 0)
+                StringCchCopy(buffer, ARRAYSIZE(buffer), defaultSettings.PathToSynapticsApp);
+            StringCchCopy(g_asAppSettings.PathToSynapticsApp, ARRAYSIZE(g_asAppSettings.PathToSynapticsApp), buffer);
+        }
+    }
+
+    // Relaunch delay
+    nResult = GetDlgItemInt(hPropertyPage, IDC_EDIT_DELAY, &bSuccess, FALSE);
+    if (bSuccess)
+    {
+        // Don't let user to make an invalid setting
+        if (nResult < 0)
+            nResult = defaultSettings.RelaunchDelay;
+        g_asAppSettings.RelaunchDelay = nResult;
     }
 }
