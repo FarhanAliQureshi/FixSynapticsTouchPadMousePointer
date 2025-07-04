@@ -242,8 +242,15 @@ BOOL ValidateGeneralSettings(HWND hDlg, HWND hPropertyPage)
         size_t length;
         if (StringCchLength(buffer, ARRAYSIZE(buffer), &length) == S_OK)
         {
-            if (length == 0) 
+            if (length == 0)
+            {
                 bInvalid = TRUE;
+            }
+            else
+            {
+                if (GetFileAttributes(buffer) != FILE_ATTRIBUTE_DIRECTORY)
+                    bInvalid = TRUE;
+            }
         }
         else
         {
