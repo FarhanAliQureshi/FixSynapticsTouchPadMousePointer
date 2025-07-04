@@ -1,9 +1,6 @@
 /*
     TODO: Make the IDD_PROPPAGE_SETTINGS_GENERAL (inside IDC_TAB1) to have
     transparent background.
-
-    TODO: Tab-key (Tab-stop) works with controls in child IDD_PROPPAGE_SETTINGS_GENERAL
-    with parent dialog window IDD_SETTINGS_DIALOG.
 */
 
 #include "framework.h"
@@ -85,8 +82,12 @@ INT_PTR CALLBACK TabPages(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 INT_PTR InitTabControl(HWND hParent)
 {
-    // Store HWND of tab control
+    // Store HWND of Tab Control
     m_tabControlData.hTabControl = GetDlgItem(hParent, IDC_TAB1);
+    // Make Tab Control as a parent of other child windows
+    LONG tabControlExStyles = GetWindowLong(m_tabControlData.hTabControl, GWL_EXSTYLE);
+    tabControlExStyles |= WS_EX_CONTROLPARENT;
+    SetWindowLong(m_tabControlData.hTabControl, GWL_EXSTYLE, tabControlExStyles);
 
     // Create tabs in tab control
     TCITEM tci;
