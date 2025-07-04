@@ -1,5 +1,6 @@
 #pragma once
 
+#include "framework.h"
 #include "settings.h"
 
 #define APP_ID L"FixSynapticsTouchPadMousePointer"
@@ -8,3 +9,5 @@
 // Global variables
 HINSTANCE g_hInstance;
 APP_SETTINGS g_asAppSettings;
+HWND g_hAboutDialog;
+HWND g_hSettingsDialog;

@@ -19,3 +19,5 @@ BOOL AddTaskbarIcon(HWND);
 BOOL RemoveTaskbarIcon(HWND);
 BOOL DisplayNotifyIconPopupMenu(HWND);
 BOOL InitExtendedControls();
+BOOL IsDialogBoxAlreadyCreated(HWND);
+BOOL CenterWindow(HWND);

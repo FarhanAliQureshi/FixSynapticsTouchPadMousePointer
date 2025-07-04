@@ -33,6 +33,7 @@ INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARA
     switch (message)
     {
     case WM_INITDIALOG:
+        g_hSettingsDialog = hDlg;
         InitTabControl(hDlg);
         return (INT_PTR)TRUE;
         break;

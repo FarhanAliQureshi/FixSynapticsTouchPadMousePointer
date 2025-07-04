@@ -26,6 +26,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initalize global variables
     g_hInstance = hInstance;
+    g_hAboutDialog = NULL;
+    g_hSettingsDialog = NULL;
 
     // Load settings
     g_asAppSettings.SettingsLocation = SETTINGS_IN_REGISTRY;
@@ -120,10 +122,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case IDM_NOTIFYICON_SETTINGS:
-            DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_SETTINGS_DIALOG), hWnd, SettingsDialogBox);
+            if (!IsDialogBoxAlreadyCreated(g_hSettingsDialog))
+            {
+                DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_SETTINGS_DIALOG), hWnd, SettingsDialogBox);
+                g_hSettingsDialog = NULL;
+            }
             break;
         case IDM_NOTIFYICON_ABOUT:
-            DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hWnd, AboutDialogBox);
+            if (!IsDialogBoxAlreadyCreated(g_hAboutDialog))
+            {
+                DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_ABOUT_DIALOG), hWnd, AboutDialogBox);
+                g_hAboutDialog = NULL;
+            }
             break;
         case IDM_NOTIFYICON_EXIT:
             DestroyWindow(hWnd);
@@ -222,4 +232,38 @@ BOOL InitExtendedControls()
     icce.dwICC = ICC_LINK_CLASS | ICC_TAB_CLASSES | ICC_UPDOWN_CLASS;
     
     return InitCommonControlsEx(&icce);
+}
+
+BOOL IsDialogBoxAlreadyCreated(HWND hDlg)
+{
+    if (hDlg == NULL)
+        return FALSE;
+
+    CenterWindow(hDlg);
+    BringWindowToTop(hDlg);
+    SetActiveWindow(hDlg);
+    SetForegroundWindow(hDlg);
+
+    return TRUE;
+}
+
+BOOL CenterWindow(HWND hWnd) {
+    RECT rectWindow;
+    DWORD nWindowWidth, nWindowHeight, nX, nY, nScreenWidth, nScreenHeight;
+
+    // Get window dimensions
+    GetWindowRect(hWnd, &rectWindow);
+    nWindowWidth = rectWindow.right - rectWindow.left;
+    nWindowHeight = rectWindow.bottom - rectWindow.top;
+
+    // Get screen dimensions
+    nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+    nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    // Calculate center coordinates
+    nX = (nScreenWidth - nWindowWidth) / 2;
+    nY = (nScreenHeight - nWindowHeight) / 2;
+
+    // Move window to center
+    return MoveWindow(hWnd, nX, nY, nWindowWidth, nWindowHeight, TRUE);
 }
