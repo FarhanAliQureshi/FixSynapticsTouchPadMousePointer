@@ -124,7 +124,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case IDM_NOTIFYICON_SETTINGS:
             if (!IsDialogBoxAlreadyCreated(g_hSettingsDialog))
             {
-                DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_SETTINGS_DIALOG), hWnd, SettingsDialogBox);
+                if (DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_SETTINGS_DIALOG), hWnd, SettingsDialogBox) == IDOK)
+                    SaveSettings(g_asAppSettings);
                 g_hSettingsDialog = NULL;
             }
             break;

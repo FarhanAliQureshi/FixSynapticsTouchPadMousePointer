@@ -195,7 +195,7 @@ void StoreGeneralSettings(HWND hPropertyPage)
         size_t length;
         if (StringCchLength(buffer, ARRAYSIZE(buffer), &length) == S_OK)
         {
-            // Don't let user to make an invalid setting
+            // Don't let user make an invalid setting
             if (length == 0)
                 StringCchCopy(buffer, ARRAYSIZE(buffer), defaultSettings.PathToSynapticsApp);
             StringCchCopy(g_asAppSettings.PathToSynapticsApp, ARRAYSIZE(g_asAppSettings.PathToSynapticsApp), buffer);
@@ -206,7 +206,7 @@ void StoreGeneralSettings(HWND hPropertyPage)
     nResult = GetDlgItemInt(hPropertyPage, IDC_EDIT_DELAY, &bSuccess, FALSE);
     if (bSuccess)
     {
-        // Don't let user to make an invalid setting
+        // Don't let user make an invalid setting
         if (nResult < 0)
             nResult = defaultSettings.RelaunchDelay;
         g_asAppSettings.RelaunchDelay = nResult;
