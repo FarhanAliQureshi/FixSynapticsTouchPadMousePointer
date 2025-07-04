@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "resource.h"
 #include "settings_dialog.h"
+#include <ShObjIdl_core.h>
 
 // Module-level variables (shouldn't be accessable from outside)
 typedef struct TABCONTROLDATA
@@ -17,6 +18,7 @@ typedef struct TABCONTROLDATA
 } TABCONTROLDATA;
 
 TABCONTROLDATA m_tabControlData;
+HWND m_hDialog;
 
 // Forward declarations of functions (keeping them private to this module)
 void DisplaySettings();
@@ -25,6 +27,8 @@ BOOL ValidateSettings(HWND);
 void DisplayGeneralSettings(HWND);
 void StoreGeneralSettings(HWND);
 BOOL ValidateGeneralSettings(HWND, HWND);
+void BrowseFolderForSynapticAppPath(HWND, HWND);
+void InitPropertyPageGeneral(HWND);
 
 // Message handler for about dialog-box window.
 INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -34,6 +38,7 @@ INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARA
     {
     case WM_INITDIALOG:
         g_hSettingsDialog = hDlg;
+        m_hDialog = hDlg;
         InitTabControl(hDlg);
         return (INT_PTR)TRUE;
         break;
@@ -68,13 +73,22 @@ INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARA
     return (INT_PTR)FALSE;
 }
 
-INT_PTR CALLBACK TabPages(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK TabPages(HWND hPropertyPage, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
     case WM_INITDIALOG:
         return (INT_PTR)TRUE;
+        break;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case IDC_BUTTON_BROWSE_PATH:
+            BrowseFolderForSynapticAppPath(m_hDialog, hPropertyPage);
+            break;
+        }
         break;
     }
 
@@ -125,6 +139,9 @@ INT_PTR InitTabControl(HWND hParent)
             SWP_HIDEWINDOW
         );
     }
+
+    // Initialize each tab page
+    InitPropertyPageGeneral(m_tabControlData.hPage[0]);
 
     // Display settings on tab pages
     DisplaySettings();
@@ -266,4 +283,48 @@ BOOL ValidateGeneralSettings(HWND hDlg, HWND hPropertyPage)
     }
 
     return TRUE;
+}
+
+void BrowseFolderForSynapticAppPath(HWND hDlg, HWND hPropertyPage)
+{
+    IFileDialog* pfd;
+    IShellItem* psiResult;
+    PWSTR pszFilePath = NULL;
+
+    if (!SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)))
+        return;
+
+    if (SUCCEEDED(CoCreateInstance(&CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, &IID_IFileOpenDialog, &pfd)))
+    {
+        pfd->lpVtbl->SetOptions(pfd, FOS_PICKFOLDERS);
+        pfd->lpVtbl->Show(pfd, hDlg);
+        if (SUCCEEDED(pfd->lpVtbl->GetResult(pfd, &psiResult)))
+        {
+            if (SUCCEEDED(psiResult->lpVtbl->GetDisplayName(psiResult, SIGDN_FILESYSPATH, &pszFilePath)))
+            {
+                SetDlgItemText(hPropertyPage, IDC_EDIT_FOLDER, pszFilePath);
+                CoTaskMemFree(pszFilePath);
+            }
+            psiResult->lpVtbl->Release(psiResult);
+        }
+        pfd->lpVtbl->Release(pfd);
+    }
+
+    CoUninitialize();
+}
+
+void InitPropertyPageGeneral(HWND hPropertyPage)
+{
+    // Relaunch delay
+    HWND hDelaySpinControl = GetDlgItem(hPropertyPage, IDC_SPIN_DELAY);
+    HWND hDelayTextBox = GetDlgItem(hPropertyPage, IDC_EDIT_DELAY);
+
+    // Allow maximum of 2 characters in TextBox (allowing range of 0 to 99)
+    SendMessage(hDelayTextBox, EM_LIMITTEXT, 2, 0);
+    // Since we are using Unicode in this whole program
+    SendMessage(hDelaySpinControl, UDM_SETUNICODEFORMAT, TRUE, 0);
+    // Attach Spin control to TextBox
+    SendMessage(hDelaySpinControl, UDM_SETBUDDY, (WPARAM)hDelayTextBox, 0);
+    // Set range from 0 to 99
+    SendMessage(hDelaySpinControl, UDM_SETRANGE32, 0, 99);
 }
