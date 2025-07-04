@@ -22,8 +22,12 @@ typedef struct TABCONTROLDATA
 TABCONTROLDATA m_tabControlData;
 
 // Forward declarations of functions (keeping them private to this module)
+void DisplaySettings();
+void StoreSettings();
+BOOL ValidateSettings(HWND);
 void DisplayGeneralSettings(HWND);
 void StoreGeneralSettings(HWND);
+BOOL ValidateGeneralSettings(HWND, HWND);
 
 // Message handler for about dialog-box window.
 INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -40,7 +44,9 @@ INT_PTR CALLBACK SettingsDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARA
         switch LOWORD(wParam)
         {
         case IDOK:
-            StoreGeneralSettings(m_tabControlData.hPage[0]);
+            if (!ValidateSettings(hDlg)) 
+                return (INT_PTR)FALSE;
+            StoreSettings();
         case IDCANCEL:
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -118,7 +124,7 @@ INT_PTR InitTabControl(HWND hParent)
     }
 
     // Display settings on tab pages
-    DisplayGeneralSettings(m_tabControlData.hPage[0]);
+    DisplaySettings();
 
     // Show first page
     TabCtrl_SetCurSel(m_tabControlData.hTabControl, 0);
@@ -146,6 +152,23 @@ void DestroyTabControlDialogs()
         DestroyWindow(m_tabControlData.hPage[i]);
         m_tabControlData.hPage[i] = NULL;
     }
+}
+
+void DisplaySettings()
+{
+    DisplayGeneralSettings(m_tabControlData.hPage[0]);
+}
+
+void StoreSettings()
+{
+    StoreGeneralSettings(m_tabControlData.hPage[0]);
+}
+
+BOOL ValidateSettings(HWND hDlg)
+{
+    if(!ValidateGeneralSettings(hDlg, m_tabControlData.hPage[0])) return FALSE;
+
+    return TRUE;
 }
 
 void DisplayGeneralSettings(HWND hPropertyPage)
@@ -185,4 +208,59 @@ void StoreGeneralSettings(HWND hPropertyPage)
             nResult = defaultSettings.RelaunchDelay;
         g_asAppSettings.RelaunchDelay = nResult;
     }
+}
+
+BOOL ValidateGeneralSettings(HWND hDlg, HWND hPropertyPage)
+{
+    WCHAR buffer[MAX_SETTINGS_VALUE_SIZE];
+    BOOL bSuccess, bInvalid;
+
+    // Path to Synaptics app
+    bInvalid = FALSE;
+    if (GetDlgItemText(hPropertyPage, IDC_EDIT_FOLDER, buffer, ARRAYSIZE(buffer)))
+    {
+        size_t length;
+        if (StringCchLength(buffer, ARRAYSIZE(buffer), &length) == S_OK)
+        {
+            if (length == 0) 
+                bInvalid = TRUE;
+        }
+        else
+        {
+            bInvalid = TRUE;
+        }
+    }
+    else
+    {
+        bInvalid = TRUE;
+    }
+
+    if (bInvalid)
+    {
+        MessageBox(hDlg, L"Path to Synaptics App is invalid. Please enter a valid path.", NULL, MB_OK | MB_ICONERROR);
+        SetFocus(GetDlgItem(hPropertyPage, IDC_EDIT_FOLDER));
+        return FALSE;
+    }
+
+    // Relaunch delay
+    bInvalid = FALSE;
+    UINT nResult = GetDlgItemInt(hPropertyPage, IDC_EDIT_DELAY, &bSuccess, FALSE);
+    if (bSuccess)
+    {
+        if (nResult < 0) 
+            bInvalid = TRUE;
+    }
+    else
+    {
+        bInvalid = TRUE;
+    }
+
+    if (bInvalid)
+    {
+        MessageBox(hDlg, L"Value for Relaunch Delay is invalid. Please enter a valid value.", NULL, MB_OK | MB_ICONERROR);
+        SetFocus(GetDlgItem(hPropertyPage, IDC_EDIT_DELAY));
+        return FALSE;
+    }
+
+    return TRUE;
 }
