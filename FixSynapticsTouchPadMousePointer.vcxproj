@@ -141,12 +141,14 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="settings_dialog.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="about_dialog.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="settings.c" />
     <ClCompile Include="settings_dialog.c" />
+    <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FixSynapticsTouchPadMousePointer.rc" />

@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "resource.h"
 #include "globals.h"
+#include "utils.h"
 #include "main.h"
 #include "settings.h"
 #include "about_dialog.h"
@@ -240,31 +241,10 @@ BOOL IsDialogBoxAlreadyCreated(HWND hDlg)
     if (hDlg == NULL)
         return FALSE;
 
-    CenterWindow(hDlg);
+    CenterWindowToScreen(hDlg);
     BringWindowToTop(hDlg);
     SetActiveWindow(hDlg);
     SetForegroundWindow(hDlg);
 
     return TRUE;
-}
-
-BOOL CenterWindow(HWND hWnd) {
-    RECT rectWindow;
-    DWORD nWindowWidth, nWindowHeight, nX, nY, nScreenWidth, nScreenHeight;
-
-    // Get window dimensions
-    GetWindowRect(hWnd, &rectWindow);
-    nWindowWidth = rectWindow.right - rectWindow.left;
-    nWindowHeight = rectWindow.bottom - rectWindow.top;
-
-    // Get screen dimensions
-    nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-    nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-    // Calculate center coordinates
-    nX = (nScreenWidth - nWindowWidth) / 2;
-    nY = (nScreenHeight - nWindowHeight) / 2;
-
-    // Move window to center
-    return MoveWindow(hWnd, nX, nY, nWindowWidth, nWindowHeight, TRUE);
 }

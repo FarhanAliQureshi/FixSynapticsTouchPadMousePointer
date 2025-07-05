@@ -1,6 +1,7 @@
 #include "framework.h"
-#include "globals.h"
 #include "resource.h"
+#include "globals.h"
+#include "utils.h"
 #include "about_dialog.h"
 
 // Module-level variables (shouldn't be accessable from outside)
@@ -9,7 +10,6 @@ HFONT m_hTitleFont;
 // Forward declarations of functions (keeping them private to this module)
 void InitControls(HWND);
 void Cleanup();
-void AutoResizeControl(HWND, DWORD);
 
 // Message handler for about dialog-box window.
 INT_PTR CALLBACK AboutDialogBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -94,36 +94,4 @@ void InitControls(HWND hDlg)
 void Cleanup()
 {
     DeleteObject(m_hTitleFont);
-}
-
-void AutoResizeControl(HWND hDlg, DWORD nIDDlgItem)
-{
-    HWND hControl = GetDlgItem(hDlg, nIDDlgItem);
-    DWORD dwTextLength = GetWindowTextLength(hControl);
-
-    if (dwTextLength == 0)
-    {
-        // There is no text in the given control. Resize to zero.
-        SetWindowPos(hControl, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOZORDER);
-        return;
-    }
-
-    // Alocate buffer on the heap.
-    SIZE_T dwBufferSize = (dwTextLength + 1) * sizeof(WCHAR);   // Adding 1 for null character
-    LPWSTR pszBuffer = (LPWSTR)HeapAlloc(GetProcessHeap(), 0, dwBufferSize);
-    // Did we run out of memory? If so then we have bigger problems to deal with.
-    if (pszBuffer == NULL)
-        return;
-
-    // Copy text in control to buffer
-    GetDlgItemText(hDlg, nIDDlgItem, pszBuffer, dwTextLength);
-
-    // Measure the size which is needed to display that text in given control and resize the control
-    SIZE newSize;
-    HDC hDC = GetDC(hControl);
-    GetTextExtentPoint32(hDC, pszBuffer, dwTextLength, &newSize);
-    ReleaseDC(hControl, hDC);
-    SetWindowPos(hControl, 0, 0, 0, newSize.cx, newSize.cy, SWP_NOMOVE | SWP_NOZORDER);
-
-    HeapFree(GetProcessHeap(), 0, pszBuffer);
 }
