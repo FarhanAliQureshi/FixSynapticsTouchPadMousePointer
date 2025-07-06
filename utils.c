@@ -1,4 +1,6 @@
 #include "framework.h"
+#include <tlhelp32.h>
+#include <Shlwapi.h>
 #include "utils.h"
 
 BOOL CenterWindowToScreen(HWND hWnd) 
@@ -53,4 +55,55 @@ void AutoResizeControl(HWND hDlg, DWORD nIDDlgItem)
     SetWindowPos(hControl, 0, 0, 0, newSize.cx, newSize.cy, SWP_NOMOVE | SWP_NOZORDER);
 
     HeapFree(GetProcessHeap(), 0, pszBuffer);
+}
+
+/// <summary>
+/// Loop through all active processes and kill any process that matches with the given executable filename
+/// </summary>
+/// <param name="pszExeFilename">Filename without path but with extension (case insensitive)</param>
+/// <param name="dwWaitToConfirm">(Optional) Wait in seconds to confirm process is terminated. Zero means don't wait to confirm</param>
+/// <returns>TRUE if killed all processes matching the filename</returns>
+BOOL KillTask(LPCWSTR pszExeFilename, DWORD dwWaitToConfirm)
+{
+    BOOL bSuccess = FALSE;
+
+    HANDLE hSnapProcess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapProcess == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    BOOL bContinueLoop = Process32First(hSnapProcess, &pe32);
+
+    while (bContinueLoop)
+    {
+        LPCWSTR pszProcessFilename = PathFindFileName(pe32.szExeFile);
+
+        if (CompareStringEx(
+            LOCALE_NAME_INVARIANT, 
+            LINGUISTIC_IGNORECASE, 
+            pszExeFilename, 
+            -1, 
+            pszProcessFilename, 
+            -1, 
+            NULL, 
+            NULL, 
+            0) == CSTR_EQUAL)
+        {
+            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+            if (hProcess)
+            {
+                bSuccess = TerminateProcess(hProcess, 0);
+                if (dwWaitToConfirm > 0)
+                    WaitForSingleObject(hProcess, dwWaitToConfirm * 1000);
+                CloseHandle(hProcess);
+            }
+        }
+
+        bContinueLoop = Process32Next(hSnapProcess, &pe32);
+    }
+
+    CloseHandle(hSnapProcess);
+
+    return bSuccess;
 }
