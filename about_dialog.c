@@ -9,6 +9,8 @@ HFONT m_hTitleFont;
 
 // Forward declarations of functions (keeping them private to this module)
 void InitControls(HWND);
+void InitHeaderControl(HWND);
+void InitVersionInfoControl(HWND);
 void Cleanup();
 
 // Message handler for about dialog-box window.
@@ -71,7 +73,18 @@ BOOL OpenLink(HWND hWnd, LPARAM lParam)
 
 void InitControls(HWND hDlg)
 {
-    // Title of App (Static Lable Control).
+    InitHeaderControl(hDlg);
+    InitVersionInfoControl(hDlg);
+}
+
+void Cleanup()
+{
+    DeleteObject(m_hTitleFont);
+}
+
+void InitHeaderControl(HWND hDlg)
+{
+    // Header of About dialog (Static Lable Control).
     // Increase font size of Title control and make it bold text.
     HWND hTitleControl = GetDlgItem(hDlg, IDC_STATIC_TITLE);
     HFONT hOriginalFont = (HFONT)SendMessage(hTitleControl, WM_GETFONT, 0, 0);
@@ -91,7 +104,65 @@ void InitControls(HWND hDlg)
     AutoResizeControl(hDlg, IDC_STATIC_TITLE);
 }
 
-void Cleanup()
+void InitVersionInfoControl(HWND hDlg)
 {
-    DeleteObject(m_hTitleFont);
+    WCHAR szVersion[MAX_PATH];    
+    StringCchCopy(szVersion, ARRAYSIZE(szVersion), L"Version");
+
+    // First, get the name of the current module (executable file)
+    WCHAR szModuleName[MAX_PATH];
+    if (!GetModuleFileName(NULL, szModuleName, ARRAYSIZE(szModuleName)))
+        return;
+
+    // Determine the size of the buffer that we need to store the version information
+    DWORD dwBufferSize = GetFileVersionInfoSize(szModuleName, NULL);
+    if (dwBufferSize == 0)
+        return;
+
+    // Allocate buffer on heap for version information
+    LPVOID lpBuffer = HeapAlloc(GetProcessHeap(), 0, dwBufferSize);
+    if (lpBuffer == NULL)
+        return;
+
+    // Get version information in heap buffer
+    if (!GetFileVersionInfo(szModuleName, 0, dwBufferSize, lpBuffer))
+    {
+        HeapFree(GetProcessHeap(), 0, lpBuffer);
+        return;
+    }
+
+    // Extract version numbers from the heap buffer
+    UINT nVersionLength;
+    VS_FIXEDFILEINFO *lpVersionInfo;
+    if (VerQueryValue(lpBuffer, L"\\", (LPVOID*)&lpVersionInfo, &nVersionLength))
+    {
+        WCHAR szProductVersion[MAX_PATH];
+        ZeroMemory(szProductVersion, ARRAYSIZE(szProductVersion));
+        StringCchPrintf(
+            szProductVersion, 
+            ARRAYSIZE(szProductVersion), 
+            L" %u.%u.%u.%u", 
+            HIWORD(lpVersionInfo->dwProductVersionMS),
+            LOWORD(lpVersionInfo->dwProductVersionMS),
+            HIWORD(lpVersionInfo->dwProductVersionLS),
+            LOWORD(lpVersionInfo->dwProductVersionLS)
+        );
+        StringCchCat(szVersion, ARRAYSIZE(szVersion), szProductVersion);
+    }
+
+    // Free system resources since we don't need buffer anymore
+    HeapFree(GetProcessHeap(), 0, lpBuffer);
+    lpBuffer = NULL;
+
+    // Get build Date from compiler
+    WCHAR szBuildDate[MAX_PATH];
+    StringCchCopy(szBuildDate, ARRAYSIZE(szBuildDate), L" (Build on ");
+    // For __DATE__ Reference: https://learn.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=msvc-170
+    StringCchCat(szBuildDate, ARRAYSIZE(szBuildDate), _CRT_WIDE(__DATE__));
+    StringCchCat(szBuildDate, ARRAYSIZE(szBuildDate), L")");
+    StringCchCat(szVersion, ARRAYSIZE(szVersion), szBuildDate);
+
+    // Display Version information on About dialog
+    SetDlgItemText(hDlg, IDC_STATIC_VERSION, szVersion);
+    AutoResizeControl(hDlg, IDC_STATIC_VERSION);
 }
