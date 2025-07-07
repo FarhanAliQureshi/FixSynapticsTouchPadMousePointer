@@ -39,7 +39,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadSettings(&g_asAppSettings);
 
     // Initialize module level variables
-    hWndAbout = NULL;
     HMENU hNotifyIconBaseMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_NOTIFYICON_MENU));
     m_hNotifyIconPopupMenu = GetSubMenu(hNotifyIconBaseMenu, 0);
 
@@ -161,7 +160,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DisplayNotifyIconPopupMenu(hWnd);
             break;
         case WM_LBUTTONDOWN:
-            MessageBox(hWnd, L"TODO: Fix the TouchPad issue", L"TODO", 0);
+            RelaunchSynapticsApp(hWnd);
             break;
         }
         break;
@@ -301,4 +300,36 @@ BOOL ExecuteSynapticsApp(HWND hWnd, BOOL bSilent)
     }
 
     return FALSE;
+}
+
+void CALLBACK TimerProcAppLaunch(
+    HWND hWnd,        // Handle to window for timer messages 
+    UINT message,     // WM_TIMER message 
+    UINT idTimer,     // Timer identifier 
+    DWORD dwTime)     // Current system time 
+{
+    // Immediatly kill timer so that we don't get repeated triggers
+    if (!KillTimer(hWnd, idTimer))
+        return;
+
+    // Do the work
+    ExecuteSynapticsApp(hWnd, FALSE);
+}
+
+void RelaunchSynapticsApp(HWND hWnd)
+{
+    if (g_asAppSettings.RelaunchDelay < 1)
+    {
+        MessageBox(hWnd, L"Invalid value for Relaunch Delay", NULL, MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    KillTask(g_asAppSettings.AppToRelaunch, g_asAppSettings.RelaunchDelay);
+
+    SetTimer(
+        hWnd, 
+        IDT_TIMER_APP_LAUNCH, 
+        g_asAppSettings.RelaunchDelay * 1000, 
+        (TIMERPROC)TimerProcAppLaunch
+    );
 }
