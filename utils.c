@@ -107,3 +107,71 @@ BOOL KillTask(LPCWSTR pszExeFilename, DWORD dwWaitToConfirm)
 
     return bSuccess;
 }
+
+void GetShellExecuteErrorMessage(LPWSTR pszBuffer, DWORD dwBufferSize, DWORD dwErrorCode)
+{
+    if (dwErrorCode > 32)
+    {
+        // Not an error
+        StringCchCopy(pszBuffer, dwBufferSize, L"");
+        return;
+    }
+
+    switch (dwErrorCode)
+    {
+    case 0: StringCchCopy(pszBuffer, dwBufferSize, L"The operating system is out of memory or resources."); break;
+    case ERROR_FILE_NOT_FOUND: StringCchCopy(pszBuffer, dwBufferSize, L"The specified file was not found."); break;
+    case ERROR_PATH_NOT_FOUND: StringCchCopy(pszBuffer, dwBufferSize, L"The specified path was not found."); break;
+    case ERROR_BAD_FORMAT: StringCchCopy(pszBuffer, dwBufferSize, L"The .exe file is invalid (non-Win32 .exe or error in .exe image)."); break;
+    case SE_ERR_ACCESSDENIED: StringCchCopy(pszBuffer, dwBufferSize, L"The operating system denied access to the specified file."); break;
+    case SE_ERR_ASSOCINCOMPLETE: StringCchCopy(pszBuffer, dwBufferSize, L"The file name association is incomplete or invalid."); break;
+    case SE_ERR_DDEBUSY: StringCchCopy(pszBuffer, dwBufferSize, L"The DDE transaction could not be completed because other DDE transactions were being processed."); break;
+    case SE_ERR_DDEFAIL: StringCchCopy(pszBuffer, dwBufferSize, L"The DDE transaction failed."); break;
+    case SE_ERR_DDETIMEOUT: StringCchCopy(pszBuffer, dwBufferSize, L"The DDE transaction could not be completed because the request timed out."); break;
+    case SE_ERR_DLLNOTFOUND: StringCchCopy(pszBuffer, dwBufferSize, L"The specified DLL was not found."); break;
+    // SE_ERR_FNF is same as ERROR_FILE_NOT_FOUND
+    //case SE_ERR_FNF: StringCchCopy(pszBuffer, dwBufferSize, L"The specified file was not found."); break;
+    case SE_ERR_NOASSOC: StringCchCopy(pszBuffer, dwBufferSize, L"There is no application associated with the given file name extension. This error will also be returned if you attempt to print a file that is not printable."); break;
+    case SE_ERR_OOM: StringCchCopy(pszBuffer, dwBufferSize, L"There was not enough memory to complete the operation."); break;
+    // SE_ERR_PNF is same as ERROR_PATH_NOT_FOUND
+    //case SE_ERR_PNF: StringCchCopy(pszBuffer, dwBufferSize, L"The specified path was not found."); break;
+    case SE_ERR_SHARE: StringCchCopy(pszBuffer, dwBufferSize, L"A sharing violation occurred."); break;
+    default: StringCchCopy(pszBuffer, dwBufferSize, L"Unknown error"); break;
+    }
+}
+
+void GetLastErrorMessage(LPWSTR pszBuffer, DWORD dwBufferSize, DWORD dwErrorCode)
+{
+    LPVOID lpMessageBuffer = NULL;
+
+    if (dwErrorCode == 0)
+    {
+        StringCchCopy(pszBuffer, dwBufferSize, L"No error");
+        return;
+    }
+
+    DWORD nMessageBufferSize = FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dwErrorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPWSTR)&lpMessageBuffer,
+        0,
+        NULL
+    );
+
+    if (nMessageBufferSize == 0 || lpMessageBuffer == NULL)
+    {
+        // FormatMessage failed for unknown reasons
+        StringCchCopy(pszBuffer, dwBufferSize, L"Unknown error");
+        if (lpMessageBuffer)
+            LocalFree(lpMessageBuffer);
+        return;
+    }
+
+    StringCchCopy(pszBuffer, dwBufferSize, (LPWSTR)lpMessageBuffer);
+
+    LocalFree(lpMessageBuffer);
+}

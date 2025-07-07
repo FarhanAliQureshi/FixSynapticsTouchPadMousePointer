@@ -1,9 +1,11 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "pathcch.lib")
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include "framework.h"
+#include <pathcch.h>
 #include "resource.h"
 #include "globals.h"
 #include "utils.h"
@@ -249,4 +251,54 @@ BOOL IsDialogBoxAlreadyCreated(HWND hDlg)
     SetForegroundWindow(hDlg);
 
     return TRUE;
+}
+
+BOOL ExecuteProgram(HWND hWnd, LPCWSTR pszExeFilenameWithPath, BOOL bSilent)
+{
+    HINSTANCE hShellInstance = ShellExecute(NULL, NULL, pszExeFilenameWithPath, NULL, NULL, SW_NORMAL);
+    DWORD lastErrorCode = GetLastError();
+
+    INT_PTR nReturnValue = (INT_PTR)hShellInstance;
+    if (nReturnValue <= 32)
+    {
+        if (!bSilent) {
+            // We got some error
+            WCHAR shellErrorMessage[MAX_PATH];
+            WCHAR lastErrorMessage[MAX_PATH];
+            WCHAR msg[MAX_PATH];
+
+            GetShellExecuteErrorMessage(shellErrorMessage, ARRAYSIZE(shellErrorMessage), (DWORD)nReturnValue);
+            GetLastErrorMessage(lastErrorMessage, ARRAYSIZE(lastErrorMessage), lastErrorCode);
+            
+            StringCchCopy(msg, ARRAYSIZE(msg), L"Error running:\r\n");
+            StringCchCat(msg, ARRAYSIZE(msg), pszExeFilenameWithPath);
+            StringCchCat(msg, ARRAYSIZE(msg), L"\r\n\r\nShell Error: ");
+            StringCchCat(msg, ARRAYSIZE(msg), shellErrorMessage);
+            StringCchCat(msg, ARRAYSIZE(msg), L"\r\n\r\nSystem Error: ");
+            StringCchCat(msg, ARRAYSIZE(msg), lastErrorMessage);
+
+            MessageBox(hWnd, msg, NULL, MB_OK | MB_ICONERROR);
+
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+BOOL ExecuteSynapticsApp(HWND hWnd, BOOL bSilent)
+{
+    WCHAR szSynapticsApp[MAX_PATH];
+
+    if (SUCCEEDED(PathCchCombine(
+        szSynapticsApp,
+        ARRAYSIZE(szSynapticsApp),
+        g_asAppSettings.PathToSynapticsApp,
+        g_asAppSettings.AppToRelaunch
+    )))
+    {
+        return ExecuteProgram(hWnd, szSynapticsApp, bSilent);
+    }
+
+    return FALSE;
 }

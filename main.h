@@ -20,3 +20,5 @@ BOOL RemoveTaskbarIcon(HWND);
 BOOL DisplayNotifyIconPopupMenu(HWND);
 BOOL InitExtendedControls();
 BOOL IsDialogBoxAlreadyCreated(HWND);
+BOOL KillTask(HWND, LPCWSTR, DWORD);
+BOOL ExecuteSynapticsApp(HWND, BOOL);
